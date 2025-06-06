@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equity Value Intelligence: S&P 500 Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="header-main">
+                        <h1 class="header-title">Equity Value Intelligence: S&P 500 Tracker</h1>
+                        <p class="header-subtitle">Real-time analysis of S&P 500 companies with Fama-French value/growth classification and DCF valuation</p>
+                    </div>
+                    <div class="header-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Companies</span>
+                            <span class="stat-value" id="totalCompanies">10</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Value Stocks</span>
+                            <span class="stat-value" id="valueStocks">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Growth Stocks</span>
+                            <span class="stat-value" id="growthStocks">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <div class="container">
+                <div class="tab-list">
+                    <button class="tab-button active" data-tab="overview">Overview</button>
+                    <button class="tab-button" data-tab="value-assessment">Value Assessment</button>
+                    <button class="tab-button" data-tab="comparison">Comparative Analysis</button>
+                    <button class="tab-button" data-tab="leaderboard">Top Undervalued</button>
+                    <button class="tab-button" data-tab="alerts">Alerts</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Filters & Controls Section -->
+        <section class="filters-section">
+            <div class="container">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label class="form-label">Sector</label>
+                        <select id="sectorFilter" class="form-control" multiple>
+                            <option value="">All Sectors</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="form-label">Valuation Status</label>
+                        <select id="valuationFilter" class="form-control">
+                            <option value="">All</option>
+                            <option value="VALUE – Undervalued">VALUE – Undervalued</option>
+                            <option value="VALUE – Fairly Valued">VALUE – Fairly Valued</option>
+                            <option value="VALUE – Overvalued">VALUE – Overvalued</option>
+                            <option value="GROWTH – Momentum">GROWTH – Momentum</option>
+                            <option value="GROWTH – Watchlist">GROWTH – Watchlist</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="form-label">Dividend Yield Range</label>
+                        <div class="range-slider">
+                            <input type="range" id="dividendMin" min="0" max="6" step="0.1" value="0">
+                            <input type="range" id="dividendMax" min="0" max="6" step="0.1" value="6">
+                            <div class="range-values">
+                                <span id="dividendMinValue">0%</span> - <span id="dividendMaxValue">6%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label class="form-label">Time Period</label>
+                        <div class="btn-group">
+                            <button class="btn btn--secondary active" data-period="TTM">TTM</button>
+                            <button class="btn btn--secondary" data-period="FY1">FY1</button>
+                            <button class="btn btn--secondary" data-period="FY2">FY2</button>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn--primary" id="applyFilters">Apply Filters</button>
+                        <button class="btn btn--secondary" id="resetFilters">Reset</button>
+                        <button class="btn btn--outline" id="exportData">Export Data</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                
+                <!-- Overview Tab -->
+                <div class="tab-content active" id="overview-content">
+                    <div class="overview-grid">
+                        <!-- KPI Cards -->
+                        <div class="kpi-section">
+                            <div class="kpi-grid">
+                                <div class="card kpi-card">
+                                    <div class="card__body">
+                                        <h3>Value Stocks</h3>
+                                        <div class="kpi-value" id="valueCount">0</div>
+                                        <div class="kpi-change positive">+12% vs last quarter</div>
+                                    </div>
+                                </div>
+                                <div class="card kpi-card">
+                                    <div class="card__body">
+                                        <h3>Growth Stocks</h3>
+                                        <div class="kpi-value" id="growthCount">0</div>
+                                        <div class="kpi-change negative">-5% vs last quarter</div>
+                                    </div>
+                                </div>
+                                <div class="card kpi-card">
+                                    <div class="card__body">
+                                        <h3>Avg P/E (Value)</h3>
+                                        <div class="kpi-value" id="avgPEValue">--</div>
+                                        <div class="kpi-change neutral">Market median: 18.5</div>
+                                    </div>
+                                </div>
+                                <div class="card kpi-card">
+                                    <div class="card__body">
+                                        <h3>Avg P/E (Growth)</h3>
+                                        <div class="kpi-value" id="avgPEGrowth">--</div>
+                                        <div class="kpi-change neutral">Market median: 28.2</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Section -->
+                        <div class="charts-section">
+                            <div class="chart-grid">
+                                <div class="card chart-card">
+                                    <div class="card__body">
+                                        <h4>Sector Distribution</h4>
+                                        <div class="chart-container">
+                                            <canvas id="sectorChart" height="300"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card chart-card">
+                                    <div class="card__body">
+                                        <h4>Valuation Metrics Comparison</h4>
+                                        <div class="chart-container">
+                                            <canvas id="valuationChart" height="300"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Value Assessment Tab -->
+                <div class="tab-content" id="value-assessment-content">
+                    <div class="card">
+                        <div class="card__body">
+                            <div class="table-header">
+                                <h3>Value Assessment Table</h3>
+                                <div class="table-controls">
+                                    <input type="text" id="tableSearch" class="form-control" placeholder="Search companies...">
+                                    <select id="tableSort" class="form-control">
+                                        <option value="dcf_value_gap">Sort by DCF Gap</option>
+                                        <option value="pe">Sort by P/E</option>
+                                        <option value="pb">Sort by P/B</option>
+                                        <option value="roic">Sort by ROIC</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table id="valueTable" class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Company</th>
+                                            <th>Sector</th>
+                                            <th>P/E</th>
+                                            <th>P/B</th>
+                                            <th>EV/EBIT</th>
+                                            <th>DCF Gap (%)</th>
+                                            <th>FCF Yield (%)</th>
+                                            <th>ROIC (%)</th>
+                                            <th>Fair Value</th>
+                                            <th>Tag</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="valueTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="table-pagination">
+                                <button class="btn btn--secondary" id="prevPage">Previous</button>
+                                <span id="pageInfo">Page 1 of 1</span>
+                                <button class="btn btn--secondary" id="nextPage">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparative Analysis Tab -->
+                <div class="tab-content" id="comparison-content">
+                    <div class="comparison-section">
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Select Companies for Comparison</h3>
+                                <select id="companySelector" class="form-control" multiple>
+                                </select>
+                                <button class="btn btn--primary mt-8" id="compareCompanies">Compare Selected</button>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-charts" id="comparisonCharts" style="display: none;">
+                            <div class="comparison-tabs">
+                                <button class="tab-button active" data-comparison-tab="valuation">Valuation Metrics</button>
+                                <button class="tab-button" data-comparison-tab="profitability">Profitability</button>
+                                <button class="tab-button" data-comparison-tab="growth">Growth Metrics</button>
+                            </div>
+                            
+                            <div class="comparison-content active" id="valuation-comparison">
+                                <div class="card">
+                                    <div class="card__body">
+                                        <h4>Valuation Metrics Comparison</h4>
+                                        <div class="chart-container">
+                                            <canvas id="valuationComparisonChart" height="400"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-content" id="profitability-comparison">
+                                <div class="card">
+                                    <div class="card__body">
+                                        <h4>Profitability Metrics</h4>
+                                        <div class="chart-container">
+                                            <canvas id="profitabilityChart" height="400"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-content" id="growth-comparison">
+                                <div class="card">
+                                    <div class="card__body">
+                                        <h4>Growth Metrics</h4>
+                                        <div class="chart-container">
+                                            <canvas id="growthChart" height="400"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Undervalued Tab -->
+                <div class="tab-content" id="leaderboard-content">
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>Top 10 Undervalued Value Stocks</h3>
+                            <div class="leaderboard-grid" id="leaderboardGrid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts Tab -->
+                <div class="tab-content" id="alerts-content">
+                    <div class="alerts-section">
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Alert Configuration</h3>
+                                <div class="alert-form">
+                                    <div class="form-group">
+                                        <label class="form-label">P/E Threshold</label>
+                                        <input type="number" id="peThreshold" class="form-control" value="15" step="0.1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">DCF Gap Threshold (%)</label>
+                                        <input type="number" id="dcfThreshold" class="form-control" value="20" step="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="flex items-center gap-8">
+                                            <input type="checkbox" id="enableAlerts" checked>
+                                            <label for="enableAlerts">Enable Alerts</label>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn--primary" id="saveAlerts">Save Configuration</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>Active Alerts</h3>
+                                <div id="activeAlerts" class="alerts-list">
+                                    <p class="text-secondary">No active alerts</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
